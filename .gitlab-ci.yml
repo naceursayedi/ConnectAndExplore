@@ -1,0 +1,44 @@
+default:
+  image: docker:20.10.16
+  services:
+    - name: docker:20.10.16-dind
+      alias: docker
+  before_script:
+    - cd Backend
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  tags:
+    - docker-privileged
+variables:
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: "tcp://docker:2375" # dind with TLS disabled
+  CONTAINER_TEST_IMAGE: $CI_REGISTRY:$CI_COMMIT_REF_SLUG
+
+stages:
+  - build
+  - test
+  - release
+
+build-stage:
+  stage: build
+  script:
+    - docker build --pull -t $CONTAINER_TEST_IMAGE -f Dockerfile.test .
+    - docker push $CONTAINER_TEST_IMAGE
+
+test-stage:
+  stage: test
+  script:
+    - |
+      retry=3
+      while [ $retry -gt 0 ]; do
+        docker pull $CONTAINER_TEST_IMAGE &&
+        docker run $CONTAINER_TEST_IMAGE && break ||
+        retry=$((retry-1))
+        sleep 5  # Introduce a delay between retries, e.g., 5 seconds
+
+
+release-stage:
+  stage: release
+  script:
+    - docker login -u $CI_USERNAME_DOCKERHUB -p $CI_PASSWORD_DOCKERHUB
+    - docker build --pull -t $CI_IMAGE_DOCKERHUB -f Dockerfile.prod .
+    - docker push $CI_IMAGE_DOCKERHUB
