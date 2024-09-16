@@ -26,7 +26,7 @@ Mit unserer Plattform kannst man problemlos an einer vielfältigen Auswahl von V
 *   MongoDB
 *   Mongoose
 *   SocketIO
-2. ### Frontend
+2. ### Frontend (https://github.com/naceursayedi/ConnectAndExplore-frontend)
 *   React
 *   CSS3 / SASS
 *   HTML5
